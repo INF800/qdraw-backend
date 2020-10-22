@@ -26,12 +26,28 @@ from pydantic import BaseModel # for post
 from typing import Optional
 
 class someResponse(BaseModel):
-    b64Image: str
+    b64Image: str = None
 
 # -----------------------------------------
 # Custom
 # -----------------------------------------
+import cv2
+import numpy as np
+import base64
+import matplotlib.pyplot as plt
 
+def readb64(uri):
+   encoded_data = uri.split(',')[1]
+   nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
+   print(nparr.shape)
+   img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+   print(img.shape, type(img))
+   cv2.imwrite('decodedcv.png', img)
+   # plt.imshow(img)
+   # plt.colorbar()
+   # plt.savefig('colorbar.png')
+   # plt.close()
+   #return img
 
 # -----------------------------------------
 # CORS: List of servers to respond to...
@@ -70,5 +86,6 @@ def get_initial_conditions(request: Request):
 
 
 @app.post("/predict")
-def update_player_move(resp: someResponse):
-    print(someResponse.b64Image)
+def predict(resp: someResponse):
+    readb64(resp.b64Image)
+    return {"label": 'rat'}
