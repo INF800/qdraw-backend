@@ -31,35 +31,48 @@ class someResponse(BaseModel):
 # -----------------------------------------
 # Custom
 # -----------------------------------------
-import cv2
 import numpy as np
+import cv2
+import tensorflow as tf
 import base64
-import matplotlib.pyplot as plt
-#from tf.keras.applications.efficientnet import preprocess_input
+from classnames import classes
+
+# load model and weights
+model = tf.keras.applications.EfficientNetB0(input_shape=(64, 64, 1), weights="effnet.h5", classes=340)
 
 def readb64(uri):
    encoded_data = uri.split(',')[1]
    nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
-   print('BEF:',nparr.shape)
    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-   print('AF:',img.shape)
    img = np.where((img == 1) | (img == 2), 255, 0) # !makes sure ctx stroke is `rgb(1,1,1)`
    return img
 
 def preprocess_input(img):
-    img = cv2.resize(img, (64,64))
-    # todo: img = preprocess_input(img) (using built-in)
+    img = cv2.resize(img.astype('uint8'), (64,64))
+    img = tf.keras.applications.efficientnet.preprocess_input(img)
+    img = np.expand_dims(img, axis=0)
+    img = np.expand_dims(img, axis=3)
+    return img # (1,w,h,c)
 
 def expected(img):
-    # todo: convert to (1,w,h,1)
-    # todo: get top 5 scores
-    return {
-        1: ['Q', 0.9],
-        2: ['B', 0.9],
-        3: ['S', 0.9],
-        4: ['M', 0.9],
-        5: ['Z', 0.9],
-    }
+    print(img.shape, model.input_shape)
+    N=5
+    preds = model.predict(img)
+    # return {
+    #     'preds': [
+    #         ['Q', 0.9],
+    #         ['B', 0.9],
+    #         ['S', 0.9],
+    #         ['M', 0.9],
+    #         ['Z', 0.9],
+    #     ]
+    # }
+    context = []
+    for _id in preds.argsort()[0][::-1][:N]: # topN ids
+        print('id:', _id)
+        print('preds:', classes[_id], preds[0][_id])
+        context.append([classes[_id], int(preds[0][_id])])
+    return {'preds': context}
 
 # -----------------------------------------
 # CORS: List of servers to respond to...
@@ -102,6 +115,6 @@ def get_initial_conditions(request: Request):
 @app.post("/predict")
 def predict(resp: someResponse):
     img = readb64(resp.b64Image)
-    # img = preprocess_input(img)
+    img = preprocess_input(img)
     preds = expected(img)
     return preds
