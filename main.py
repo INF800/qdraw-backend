@@ -49,6 +49,7 @@ def readb64(uri):
 
 def preprocess_input(img):
     img = cv2.resize(img.astype('uint8'), (64,64))
+    #cv2.imwrite('save.png', img)
     img = tf.keras.applications.efficientnet.preprocess_input(img)
     img = np.expand_dims(img, axis=0)
     img = np.expand_dims(img, axis=3)
@@ -56,7 +57,7 @@ def preprocess_input(img):
 
 def expected(img):
     print(img.shape, model.input_shape)
-    N=5
+    N=3
     preds = model.predict(img)
     # return {
     #     'preds': [
@@ -71,7 +72,7 @@ def expected(img):
     for _id in preds.argsort()[0][::-1][:N]: # topN ids
         print('id:', _id)
         print('preds:', classes[_id], preds[0][_id])
-        context.append([classes[_id], int(preds[0][_id])])
+        context.append([classes[_id], int(preds[0][_id]*1000)])
     return {'preds': context}
 
 # -----------------------------------------
@@ -81,12 +82,15 @@ from fastapi.middleware.cors import CORSMiddleware
 origins = [
     # "http://localhost.tiangolo.com",
     # "https://localhost.tiangolo.com",
+    "https://rakesh4real.github.io",
+    "http://rakesh4real.github.io",
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
     "http://localhost:3004",
+
 ]
 
 app.add_middleware(
