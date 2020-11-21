@@ -36,9 +36,23 @@ import cv2
 import tensorflow as tf
 import base64
 from classnames import classes
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, Flatten, Activation, BatchNormalization
+from tensorflow.keras.models import Model
 
-# load model and weights
-model = tf.keras.applications.EfficientNetB0(input_shape=(64, 64, 1), weights="effnet.h5", classes=340)
+# load model weights after redoing architecture
+base_model = tf.keras.applications.EfficientNetB0(input_shape=(64, 64, 1), weights=None, classes=61)
+last_layer = base_model.get_layer('avg_pool')
+x = Flatten()(last_layer.output)
+x = Dense(256, activation='relu', name='lin')(x)
+x = BatchNormalization()(x)
+x = Dropout(0.5)(x)
+x = Dense(61, activation='softmax', name='softmax')(x)
+
+model = Model( inputs = base_model.input,outputs = x)
+model.load_weights('classes_61_effnet_transfer_learning.h5')
+# print(model.summary())
+
+
 
 def readb64(uri):
    encoded_data = uri.split(',')[1]
