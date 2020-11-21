@@ -1,0 +1,9 @@
+fastapi
+jinja2
+uvicorn
+sqlalchemy
+gunicorn==20.0.4
+aiofiles
+tensorflow
+keras
+opencv-contrib-python
